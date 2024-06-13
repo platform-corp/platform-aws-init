@@ -1,0 +1,41 @@
+ui = true
+cluster_addr = "https://${hostname}.${domain_name}:8201"
+api_addr     = "https://${hostname}.${domain_name}:8200"
+
+# cluster_name = ${cluster_name}
+
+listener "tcp" {
+  address = "[::]:8200"
+  cluster_address = "[::]:8201"
+  tls_cert_file = "/vault/config/tls/vault.crt"
+  tls_key_file = "/vault/config/tls/vault.key"
+}
+
+storage "raft" {
+  path = "/vault/data"
+  node_id = "${hostname}_raft"
+%{ for host in hostnames ~}
+  retry_join {
+    leader_api_addr = "https://${host}:8200"
+    leader_client_cert_file = "/vault/config/tls/vault.crt"
+    leader_client_key_file = "/vault/config/tls/vault.key"
+  }
+%{ endfor ~}
+  autopilot {
+    cleanup_dead_servers = "true"
+    last_contact_threshold = "200ms"
+    last_contact_failure_threshold = "10m"
+    max_trailing_logs = 250000
+    min_quorum = 3
+    server_stabilization_time = "10s"
+  }
+}
+
+%{ if kms_key != "" }
+seal "awskms" {
+  access_key = "${access_key}"
+  secret_key = "${secret_key}"
+  region     = "${aws_region}"
+  kms_key_id = "${kms_key}"
+}
+%{ endif }

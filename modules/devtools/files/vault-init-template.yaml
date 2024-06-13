@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  VaultInitLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties: 
+      FunctionName: !Sub "${LambdaFunctionName}"
+      Role: !Sub "${LambdaRoleArn}"
+      PackageType: Image
+      Code:
+        ImageUri: !Sub "${ImageUri}"
+      MemorySize: 128
+      Timeout: 60
+      VpcConfig:
+        SecurityGroupIds:
+          - !Sub ${SecurityGroup}
+        SubnetIds:
+          - !Sub ${SubnetId}
+Parameters:
+  LambdaFunctionName:
+    Type: String
+  LambdaRoleArn:
+    Type: String
+  ImageUri:
+    Type: String
+  SecurityGroup:
+    Type: String
+  SubnetId:
+    Type: String
+

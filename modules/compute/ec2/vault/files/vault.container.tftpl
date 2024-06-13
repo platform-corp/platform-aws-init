@@ -1,0 +1,26 @@
+[Unit]
+Description=Vault container
+
+[Container]
+Image=docker.io/hashicorp/vault:1.16
+Volume=/usr/local/share/vault-data:/vault/data
+Volume=/usr/local/etc/vault:/vault/config
+AddCapability=IPC_LOCK
+PublishPort=8200:8200
+PublishPort=8201:8201
+Exec=vault server -config=/vault/config/vault-config.hcl
+HostName=vault
+ContainerName=vault
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+EnvironmentFile=/etc/proxy.conf
+ExecStartPre=/usr/bin/chcon -Rt container_file_t /usr/local/share/vault-data
+ExecStartPre=/usr/bin/chcon -Rt container_file_t /usr/local/etc/vault
+ExecStartPre=openssl req -new -x509 -days 365 -nodes -out /usr/local/etc/vault/tls/vault.crt -keyout /usr/local/etc/vault/tls/vault.key -subj "${cert_subject}" -addext "subjectAltName=IP:127.0.0.1"
+ExecStartPre=sh -c "until curl -m 10 --silent --head ${proxy} &>/dev/null; do sleep 5; done"
+ExecStartPre=chown -R vault /usr/local/etc/vault/tls
+
+[Install]
+WantedBy=multi-user.target default.target

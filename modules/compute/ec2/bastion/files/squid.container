@@ -1,0 +1,19 @@
+[Unit]
+Description=Squid proxy
+
+[Container]
+Image=docker.io/ubuntu/squid
+Volume=/var/share/squid/config/squid.conf:/etc/squid/squid.conf
+Volume=/var/share/squid/logs:/var/log/squid
+Volume=/var/share/squid/cache:/var/spool/squid
+Environment=TZ=UTC
+PublishPort=3128:3128
+ContainerName=squid
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+ExecStartPre=/usr/bin/chcon -Rt container_file_t /var/share/squid
+
+[Install]
+WantedBy=multi-user.target default.target
